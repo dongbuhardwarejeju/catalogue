@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Grid with Tags</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .header-info {
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .search-bar {
+            padding: 20px;
+            text-align: center;
+            background-color: #f4f4f4;
+        }
+        .search-bar input {
+            width: 80%;
+            max-width: 600px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .product-card {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden;
+            text-align: center;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .product-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .product-card h3 {
+            margin: 10px 0;
+            font-size: 18px;
+        }
+        .product-card p {
+            font-size: 14px;
+            color: #555;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Info -->
+    <div class="header-info">
+        주식회사 동부건재<br>
+        제주시 번영로 5, 064-721-6676
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+        <input type="text" id="search" placeholder="Search products...">
+    </div>
+    <div class="product-grid" id="product-grid">
+        <!-- Products will be dynamically added here -->
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const productGrid = document.getElementById('product-grid');
+        const searchInput = document.getElementById('search');
+        let products = []; // Array to store products from CSV
+
+        // Function to display products
+        function displayProducts(filteredProducts) {
+            productGrid.innerHTML = '';
+            filteredProducts.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img src="${product.image || 'https://via.placeholder.com/150'}" alt="${product.name}">
+                    <h3>${product.name}</h3>
+                    <p>${product.shortDescription}</p>
+                    <p>${product.longDescription}</p>
+                `;
+                productGrid.appendChild(card);
+            });
+        }
+
+        // Fetch and process the CSV file
+        async function loadProducts() {
+            const response = await fetch('products.csv'); // Load CSV file
+            const data = await response.text(); // Convert to text
+            const rows = data.split('\n').slice(1); // Skip header row
+            products = rows
+                .map(row => {
+                    const columns = row.split(','); // Split row into columns
+                    if (columns.length < 5) {
+                        return null; // Skip incomplete rows
+                    }
+                    const [name, shortDescription, longDescription, image, tags] = columns; // Extract columns
+                    return {
+                        name: name?.trim(),
+                        shortDescription: shortDescription?.trim(),
+                        longDescription: longDescription?.trim(),
+                        image: image?.trim(),
+                        tags: tags?.trim() // Tags column
+                    };
+                })
+                .filter(product => product !== null); // Filter out null rows
+
+            displayProducts(products); // Display products
+        }
+
+        // Search functionality
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredProducts = products.filter(product =>
+                product.name.toLowerCase().includes(searchTerm) ||
+                product.shortDescription.toLowerCase().includes(searchTerm) ||
+                product.longDescription.toLowerCase().includes(searchTerm) ||
+                product.tags.toLowerCase().includes(searchTerm) // Include tags in search
+            );
+            displayProducts(filteredProducts);
+        });
+
+        // Load products on page load
+        loadProducts();
+    </script>
+</body>
+</html>
